@@ -4,49 +4,27 @@ import fetch from "node-fetch";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
-  res.send(`
-    <h2>Bünker Proxy Launcher</h2>
-    <button onclick="start()">Open Site</button>
-    <script>
-      function start() {
-        const url = prompt("Enter a site URL:");
-        if (!url) return;
+// Serve the frontend
+app.use(express.static("./"));
 
-        const proxyUrl = "/proxy?url=" + encodeURIComponent(url);
-        const win = window.open("about:blank", "_blank");
-
-        fetch(proxyUrl)
-          .then(res => res.text())
-          .then(html => {
-            win.document.open();
-            win.document.write(html);
-            win.document.close();
-          })
-          .catch(err => {
-            win.document.write("<h1>Failed: " + err + "</h1>");
-          });
-      }
-    </script>
-  `);
-});
-
+// Proxy endpoint
 app.get("/proxy", async (req, res) => {
-  const url = req.query.url;
-  if (!url) return res.status(400).send("Missing url");
+const target = req.query.url;
+if (!target) return res.status(400).send("Missing URL parameter.");
 
-  try {
-    const response = await fetch(url);
-    let body = await response.text();
+try {
+const response = await fetch(target);
+const data = await response.text();
 
-    res.setHeader("Content-Type", "text/html");
-    res.setHeader("X-Frame-Options", "");
-    res.setHeader("Content-Security-Policy", "");
+```
+res.set("Content-Type", "text/html");
+res.send(data);
+```
 
-    res.send(body);
-  } catch (err) {
-    res.status(500).send("Failed to fetch: " + err.message);
-  }
+} catch (err) {
+console.error(err);
+res.status(500).send("Error fetching target URL.");
+}
 });
 
-app.listen(PORT, () => console.log("Proxy running on port " + PORT));
+app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
