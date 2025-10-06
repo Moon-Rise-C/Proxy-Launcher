@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proxy Launcher</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.png" />
+  <style>
+    :root {
+      --neon: #0ff;
+      --bg: #000;
+      --text: #fff;
+      --valid: #0f0;
+      --invalid: #f33;
+    }
+
+body {
+  background: radial-gradient(circle at center, #111 0%, #000 100%);
+  color: var(--text);
+  font-family: "Segoe UI", sans-serif;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.2em;
+  margin-bottom: 0.5em;
+  text-shadow: 0 0 12px var(--neon);
+}
+
+p {
+  color: #aaa;
+  margin-bottom: 1.5em;
+}
+
+.input-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+input {
+  width: 340px;
+  padding: 10px 12px;
+  border: 2px solid var(--neon);
+  border-radius: 10px;
+  outline: none;
+  background: #111;
+  color: var(--neon);
+  font-size: 1em;
+  box-shadow: 0 0 10px var(--neon);
+  transition: 0.3s ease;
+}
+
+input.valid {
+  border-color: var(--valid);
+  box-shadow: 0 0 16px var(--valid);
+  color: var(--valid);
+}
+
+input.invalid {
+  border-color: var(--invalid);
+  box-shadow: 0 0 16px var(--invalid);
+  color: var(--invalid);
+}
+
+button {
+  padding: 10px 20px;
+  background: var(--neon);
+  border: none;
+  border-radius: 10px;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 14px var(--neon);
+  transition: 0.2s ease;
+}
+
+button:disabled {
+  background: #333;
+  color: #777;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background: #09f;
+  color: var(--text);
+  box-shadow: 0 0 25px #09f;
+}
+
+footer {
+  position: absolute;
+  bottom: 20px;
+  font-size: 0.8em;
+  color: #666;
+}
+
+.status {
+  font-size: 0.9em;
+  margin-top: 0.5em;
+  height: 1em;
+  color: #888;
+}
+
+  </style>
+</head>
+<body>
+  <h1>Proxy Launcher</h1>
+  <p>Enter a URL to launch it securely through your proxy</p>
+
+  <div class="input-container">
+    <input type="text" id="urlInput" placeholder="https://example.com" />
+    <button id="goBtn" onclick="openProxy()" disabled>Go</button>
+  </div>
+
+  <div class="status" id="statusText">Waiting for input...</div>
+
+  <footer>© 2025 Proxy Launcher</footer>
+
+  <script>
+    const urlInput = document.getElementById("urlInput");
+    const statusText = document.getElementById("statusText");
+    const goBtn = document.getElementById("goBtn");
+    let checkTimeout = null;
+
+    // Validate URL reachability in real time
+    urlInput.addEventListener("input", () => {
+      clearTimeout(checkTimeout);
+      const raw = urlInput.value.trim();
+      if (!raw) {
+        statusText.textContent = "Waiting for input...";
+        urlInput.classList.remove("valid", "invalid");
+        goBtn.disabled = true;
+        return;
+      }
+
+      checkTimeout = setTimeout(async () => {
+        const formatted = raw.startsWith("http") ? raw : "https://" + raw;
+        try {
+          statusText.textContent = "Checking...";
+          const response = await fetch(`/proxy?url=${encodeURIComponent(formatted)}`, { method: "HEAD" });
+          if (response.ok) {
+            urlInput.classList.add("valid");
+            urlInput.classList.remove("invalid");
+            statusText.textContent = "Valid link!";
+            goBtn.disabled = false;
+          } else {
+            throw new Error();
+          }
+        } catch {
+          urlInput.classList.add("invalid");
+          urlInput.classList.remove("valid");
+          statusText.textContent = "Unreachable or invalid link.";
+          goBtn.disabled = true;
+        }
+      }, 600);
+    });
+
+    function openProxy() {
+      const url = urlInput.value.trim();
+      const formatted = url.startsWith("http") ? url : "https://" + url;
+      const proxyURL = `/proxy?url=${encodeURIComponent(formatted)}`;
+      window.open(proxyURL, "_blank");
+    }
+
+    urlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !goBtn.disabled) openProxy();
+    });
+  </script>
+
+</body>
+</html>
